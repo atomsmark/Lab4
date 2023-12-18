@@ -37,3 +37,6 @@ showExpr (Mul e1 e2) = showFactor e1 ++ " * " ++ showFactor e2
 showFactor (Add e1 e2) = "(" ++ showExpr (Add e1 e2) ++ ")"
 showFactor e           = showExpr e
 
+
+
+
