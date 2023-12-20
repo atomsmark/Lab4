@@ -5,6 +5,7 @@ import DynFlags (IntegerLibrary(IntegerSimple))
 import Parsing
 import RegAlloc.Graph.Stats (addSRM)
 import Test.QuickCheck.Text (number)
+import Data.Maybe
 
 
 --A---------------------------------------------
@@ -20,6 +21,9 @@ data Expr
     | Bin BinOp Expr Expr
     | Trig TrigOp Expr
     deriving (Eq, Show)
+
+
+
 
 
 x :: Expr
@@ -81,7 +85,7 @@ eval (Trig Cos e) x  = Prelude.cos (eval e x)
 
 
 readExpr :: String -> Maybe Expr
-readExpr input = case parse expr input of
+readExpr input =  case parse expr $ filter (/=' ') input of
                  Just (a, rest) -> Just a
                  _              -> Nothing
 
@@ -91,11 +95,12 @@ term = foldl1 (Bin Mul) <$> chain factor (char '*')
 factor = Num <$> readsP
       <|> char '(' *> expr <* char ')'
       <|> char 'x' *> return Var
-      <|> char 's' char 'i' char 'n' *> (Trig Sin) expr
+      <|> char 's' *> char 'i' *> char 'n' *> ((Trig Sin) <$> factor)   --ev. generalisera
+      <|> char 'c' *> char 'o' *> char 's' *> ((Trig Cos) <$> factor)
 
 
---prop_readExpr :: Expr -> Bool
---prop_readExpr input = readExpr (showExpr input) == input
+prop_readExpr :: Expr -> Bool
+prop_readExpr input = fromJust (readExpr (showExpr input)) == input
 
 
 {-assoc :: Expr -> Expr
@@ -103,8 +108,6 @@ assoc (Add (Add e1 e2) e3) = assoc (Add e1 (Add e2 e3))
 assoc (Add e1          e2) = Add (assoc e1) (assoc e2)
 assoc (Sub e1 e2)          = Sub (assoc e1) (assoc e2)
 assoc (Lit n)              = Lit n -}
-                      
-
 ------------------------------------------------------------------------
 --Parsea OCH kalkylera:
 {-type ParserFun a = String -> Maybe (a,String)
@@ -163,6 +166,8 @@ chain item sep = do
     return (i:is)-}
 
 --E--------------------------------------------------------------------
+prop_ShowReadExpr :: Expr -> Bool
+
 
 
 
