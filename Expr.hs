@@ -167,7 +167,11 @@ chain item sep = do
 
 --E--------------------------------------------------------------------
 prop_ShowReadExpr :: Expr -> Bool
---hej
+prop_ShowReadExpr input = fromJust (readExpr (showExpr input)) == input
+
+
+
+
 
 
 
