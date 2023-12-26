@@ -5,6 +5,7 @@
 import ThreepennyPages
 import Graphics.UI.Threepenny.Core as UI
 import qualified Graphics.UI.Threepenny as UI
+import Expr 
 
 canWidth,canHeight :: Num a => a
 canWidth  = 300
@@ -48,3 +49,75 @@ readAndDraw input canvas =
      set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
      UI.fillText formula (10,canHeight/2) canvas
      path "blue" [(10,10),(canWidth-10,canHeight/2)] canvas
+      -- Draw the graph -- COPILOT
+      path "blue" (points (readExpr formula) 0.04 (canWidth, canHeight)) canvas
+      -- Draw the graph of the function -- COPILOT
+      drawGraph (readExpr formula) canvas
+
+
+
+--H--------------------------------------------------------------------
+{-Implement a function with the following type.
+points :: Expr -> Double -> (Int,Int) -> [Point]
+
+The function gets three arguments; points exp scale (width,height):
+- An expression exp,
+- A scaling value scale,
+- The width and height of the drawing area
+
+The type Point is defined in threepenny-gui and is just a pair of numbers:
+- type Point = (Double, Double)
+
+The idea is that points will calculate all the points of the graph in
+terms of pixels. The scaling value tells you the ratio between pixels and
+floating point numbers. The arguments width and height tell you how big
+the drawing area is. We assume that the origin (0,0) point is in the
+middle of our drawing area.
+
+For the canvas and function coordinate systems above, we would use 0.04
+for the scale (since 1 pixel corresponds to 0.04 in the floating point
+world, this is (6.0 + 6.0) / 300), and (300,300) for the width and height.-}
+
+
+points :: Expr -> Double -> (Int,Int) -> [Point]
+points exp scale (width,height) = [(x, y) | x <- [0..width], y <- [0..height]]
+
+
+
+--I--------------------------------------------------------------------
+{-Implement the graphical user interface that connects assignments A–F
+into a web-based graphical calculator.
+
+If you are basing your code on the provided module Calculator.hs Download
+Calculator.hs, this part only involves completing the function:
+readAndDraw :: Element -> Canvas -> UI (),
+which reads the expression from the given input element and draws the
+graph on the given canvas.
+
+When the user types in something that is not an expression, you may
+decide yourself what to do. The easiest thing is to draw nothing.-}
+
+-- Se readAndDraw-fukntionen ovan.
+
+
+--J--------------------------------------------------------------------
+{-Implement some form of zooming. There are a number of ways to do this.
+Either the user clicks somewhere on the canvas, and the drawing function
+zooms around that point. Or there could be a text entry where the scaling
+factor can be given. Or there could be a slider that the user can drag.
+
+Make sure there is a way to zoom out after you have zoomed in.-}
+
+
+-- function to zoom in and out after the readAndDraw function has been called
+zoom :: Element -> Canvas -> UI ()
+
+
+--K--------------------------------------------------------------------
+{-Implement a Differentiate button that displays both the differentiated
+expression and its graph.
+
+The recommended solution is to let the differentiated expression replace
+the expression in the text entry field. This allows you to differentiate
+many times, and provides a nice way to test that showExpr and simplify
+work as expected.)-}

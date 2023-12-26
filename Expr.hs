@@ -2,7 +2,7 @@ import Test.QuickCheck
 import GHC.Natural (naturalFromInteger)
 import Prelude 
 import DynFlags (IntegerLibrary(IntegerSimple))
-import Parsing
+import Parsing ( chain, char, parse, readsP, (<|>), Parser )
 import RegAlloc.Graph.Stats (addSRM)
 import Test.QuickCheck.Text (number)
 import Data.Maybe
@@ -10,22 +10,23 @@ import Data.Maybe
 
 --A---------------------------------------------
 data BinOp = Add | Mul
-    deriving (Eq, Show)
+    deriving (Eq{-, Show-})
 
 data TrigOp = Sin | Cos
-    deriving (Eq, Show)
+    deriving (Eq{-, Show-})
 
 data Expr
     = Num Double
     | Var
     | Bin BinOp Expr Expr
     | Trig TrigOp Expr
-    deriving (Eq, Show)
+    deriving (Eq{-, Show-})
 
 
 
 
 
+{-
 x :: Expr
 x = Var
 
@@ -45,11 +46,12 @@ size (Num n) = 0
 size (Var) = 0
 size (Bin op n m) = 1 + (size n) + (size m)
 size (Trig op n) = 1 + (size n)
+-}
 --A-------------------------------------------------
 
 --B-------------------------------------------------
---instance Show Expr where
---    show = showExpr
+instance Show Expr where
+    show = showExpr
 
 showExpr :: Expr -> String
 showExpr (Num n)     = show n
@@ -166,19 +168,80 @@ chain item sep = do
     return (i:is)-}
 
 --E--------------------------------------------------------------------
-prop_ShowReadExpr :: Expr -> Bool
+range = 99
+
+arbExpr :: Int -> Gen Expr
+arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s)]
+  where
+    rNum = elements $ map Num [0..range]
+    rBin s = do
+        let s' = (s `div` 2)
+        op <- elements [Bin Add, Bin Mul]
+        e1 <- arbExpr s'
+        e2 <- arbExpr s'
+        return $ op e1 e2
+    rTrig s = do
+        let s' = (s `div` 2)
+        op <- elements [Trig Sin, Trig Cos]
+        e <- arbExpr s'
+        return $ op e
+
+instance Arbitrary Expr where 
+  arbitrary = sized arbExpr
 
 
+{-Also, define a generator for expressions:
 
+arbExpr :: Int -> Gen Expr
+Do not forget to take care of the size argument in the generator.
+Make Expr an instance of the class Arbitrary and QuickCheck the result!
 
+instance Arbitrary Expr where 
+  arbitrary = sized arbExpr
+quickCheck will call arbExpr with sizes in the range [0..99],
+so make sure arbExpr produces reasonably sized expressions for testing
+with this range of sizes.-}
 
 --F--------------------------------------------------------------------
+{-Define a function
+simplify :: Expr -> Expr
+which simplifies expressions so that subexpressions not involving
+variables are always simplified to their smallest representation,
+and that (sub)expressions representing x + 0 , 0 * x and 1 * x and
+similar terms are always simplified. Define (and run) QuickCheck
+properties that check that the simplifier is correct (e.g. 1+1 does not
+simplify to 3), and that it simplifies as much as possible (or more
+accurately: as much as you expect!).-}
 
+simplify :: Expr -> Expr
+simplify (Num n) = Num n
+simplify (Var) = Var
+simplify (Bin Add (Num 0) e2) = simplify e2
+simplify (Bin Add e1 (Num 0)) = simplify e1
+simplify (Bin Mul (Num 0) e2) = Num 0
+simplify (Bin Mul e1 (Num 0)) = Num 0
+simplify (Bin Mul (Num 1) e2) = simplify e2
+simplify (Bin Mul e1 (Num 1)) = simplify e1
+simplify (Bin Add e1 e2) = Bin Add (simplify e1) (simplify e2)
+simplify (Bin Mul e1 e2) = Bin Mul (simplify e1) (simplify e2)
+simplify (Trig Sin e) = Trig Sin (simplify e)
+simplify (Trig Cos e) = Trig Cos (simplify e)
 
 
 
 --G--------------------------------------------------------------------
+{-Define a function
+differentiate :: Expr -> Expr
+which differentiates the expression (with respect to x). You should use
+the simplify function to simplify the result.-}
 
+differentiate :: Expr -> Expr
+differentiate (Num n) = Num 0
+differentiate (Var) = Num 1
+differentiate (Bin Add e1 e2) = Bin Add (differentiate e1) (differentiate e2)
+differentiate (Bin Mul e1 e2) = Bin Add (Bin Mul (differentiate e1) e2) (Bin Mul e1 (differentiate e2))
+differentiate (Trig Sin e) = Bin Mul (Trig Cos e) (differentiate e)
+differentiate (Trig Cos e) = Bin Mul (Num (-1)) (Bin Mul (Trig Sin e) (differentiate e))
 
     
 
