@@ -177,6 +177,7 @@ prop_ShowReadExpr input = fromJust (readExpr (showExpr input)) == input
 
 
 --F--------------------------------------------------------------------
+
 simplify :: Expr -> Expr
 simplify (Num n) = Num n 
 simplify (Var) = Var 
@@ -186,9 +187,12 @@ simplify (Bin Mul (Num 0) m) = Num 0
 simplify (Bin Mul m (Num 0)) = Num 0 
 simplify (Bin Mul m (Num 1)) = simplify m 
 simplify (Bin Mul (Num 1) m) = simplify m 
-
-
-
+simplify (Bin Add n m) = Bin Add (simplify n) (simplify m)
+simplify (Bin Mul n m) = Bin Mul (simplify n) (simplify m)
+simplify (Trig Sin (Num 0)) = Num 0 -- fråga ifall detta behövs?
+simplify (Trig Cos (Num 0)) = Num 1 -- fråga ifall detta behövs?
+simplify (Trig Sin n) = Trig Sin (simplify n)
+simplify (Trig Cos n) = Trig Cos (simplify n)
 
 
 --G--------------------------------------------------------------------
