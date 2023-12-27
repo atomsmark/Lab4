@@ -183,23 +183,30 @@ simplify (Num n) = Num n
 simplify (Var) = Var 
 simplify (Bin Add (Num 0) m) = simplify m 
 simplify (Bin Add m (Num 0)) = simplify m
-simplify (Bin Mul (Num 0) m) = Num 0 
-simplify (Bin Mul m (Num 0)) = Num 0 
+simplify (Bin Mul (Num 0) _) = Num 0 
+simplify (Bin Mul _ (Num 0)) = Num 0 
 simplify (Bin Mul m (Num 1)) = simplify m 
-simplify (Bin Mul (Num 1) m) = simplify m 
-simplify (Bin Add n m) = Bin Add (simplify n) (simplify m)
-simplify (Bin Mul n m) = Bin Mul (simplify n) (simplify m)
+simplify (Bin Mul (Num 1) m) = simplify m
+simplify (Bin Add n m) = simplifyBin Add (simplify n) (simplify m)
+simplify (Bin Mul n m) = simplifyBin Mul (simplify n) (simplify m)
 simplify (Trig Sin (Num 0)) = Num 0 -- fråga ifall detta behövs?
 simplify (Trig Cos (Num 0)) = Num 1 -- fråga ifall detta behövs?
 simplify (Trig Sin n) = Trig Sin (simplify n)
 simplify (Trig Cos n) = Trig Cos (simplify n)
 
+simplifyBin :: BinOp -> Expr -> Expr -> Expr
+simplifyBin op n m = Num (eval (Bin op n m) 0)
+
 
 --G--------------------------------------------------------------------
 
-
-    
-
+differentiate :: Expr -> Expr
+differentiate (Num n) = Num 0
+differentiate (Var) = Num 1
+differentiate (Bin Add e1 e2) = Bin Add (differentiate e1) (differentiate e2)
+differentiate (Bin Mul e1 e2) = Bin Add (Bin Mul (differentiate e1) e2) (Bin Mul e1 (differentiate e2))
+differentiate (Trig Sin e) = Bin Mul (Trig Cos e) (differentiate e)
+differentiate (Trig Cos e) = Bin Mul (Num (-1)) (Bin Mul (Trig Sin e) (differentiate e))
 
 
 
