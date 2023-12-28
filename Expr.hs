@@ -227,9 +227,7 @@ simplify (Trig Sin n) = Trig Sin (simplify n)
 simplify (Trig Cos n) = Trig Cos (simplify n)
 
 simplifyBin :: BinOp -> Expr -> Expr -> Expr
-simplifyBin op n m = simplify (Bin op n m)
-    
---Num (eval (Bin op n m) 0)
+simplifyBin op n m = Num (eval (Bin op n m) 0)
 
 --quickCheck TODO
 
