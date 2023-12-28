@@ -197,21 +197,25 @@ simplify (Trig Cos n) = Trig Cos (simplify n)
 simplifyBin :: BinOp -> Expr -> Expr -> Expr
 simplifyBin op n m = Num (eval (Bin op n m) 0)
 
+--quickCheck TODO
+
 
 --G--------------------------------------------------------------------
 
 differentiate :: Expr -> Expr
 differentiate (Num n) = Num 0
 differentiate (Var) = Num 1
-differentiate (Bin Add e1 e2) = Bin Add (differentiate e1) (differentiate e2)
-differentiate (Bin Mul e1 e2) = Bin Add (Bin Mul (differentiate e1) e2) (Bin Mul e1 (differentiate e2))
-differentiate (Trig Sin e) = Bin Mul (Trig Cos e) (differentiate e)
-differentiate (Trig Cos e) = Bin Mul (Num (-1)) (Bin Mul (Trig Sin e) (differentiate e))
+differentiate (Bin Add n m) = simplify (Bin Add (differentiate n) (differentiate m))
+differentiate (Bin Mul n m) = Bin Add (Bin Mul (differentiate n) m) (Bin Mul n (differentiate m))
+differentiate (Trig Sin n) = Bin Mul (Trig Cos n) (differentiate n)
+differentiate (Trig Cos n) = Bin Mul (Num (-1)) (Bin Mul (Trig Sin n) (differentiate n))
 
 
 
+--(Bin Mul (differentiate n) m) n är  derivierad: 3' * m 
 
-
+-- Om expr är: (3x*5)
+-- 3'* 5 + 3x * 0
 
 
 
