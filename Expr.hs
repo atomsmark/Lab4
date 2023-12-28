@@ -227,7 +227,9 @@ simplify (Trig Sin n) = Trig Sin (simplify n)
 simplify (Trig Cos n) = Trig Cos (simplify n)
 
 simplifyBin :: BinOp -> Expr -> Expr -> Expr
-simplifyBin op n m = Num (eval (Bin op n m) 0)
+simplifyBin op n m = simplify (Bin op n m)
+    
+--Num (eval (Bin op n m) 0)
 
 --quickCheck TODO
 
@@ -238,7 +240,7 @@ differentiate :: Expr -> Expr
 differentiate (Num n) = Num 0
 differentiate (Var) = Num 1
 differentiate (Bin Add n m) = simplify (Bin Add (differentiate n) (differentiate m))
-differentiate (Bin Mul n m) = simplify (Bin Mul (differentiate n) m) 
+differentiate (Bin Mul n m) = simplify (Bin Add (Bin Mul (differentiate n) m) (Bin Mul n (differentiate m)))
 differentiate (Trig Sin n) = simplify (Bin Mul (Trig Cos n) (differentiate n))
 differentiate (Trig Cos n) = simplify (Bin Mul (Num (-1)) (Bin Mul (Trig Sin n) (differentiate n)))
 
