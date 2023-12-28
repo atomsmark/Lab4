@@ -169,8 +169,40 @@ chain item sep = do
 prop_ShowReadExpr :: Expr -> Bool
 prop_ShowReadExpr input = fromJust (readExpr (showExpr input)) == input
 
+range = 99
 
--- fortsätter efter samråd med Oski
+arbExpr :: Int -> Gen Expr
+arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s)]
+  where
+    rNum = elements $ map Num [0..range]
+    rBin s = do
+        let s' = (s `div` 2)
+        op <- elements [Bin Add, Bin Mul]
+        e1 <- arbExpr s'
+        e2 <- arbExpr s'
+        return $ op e1 e2
+    rTrig s = do
+        let s' = (s `div` 2)
+        op <- elements [Trig Sin, Trig Cos]
+        e <- arbExpr s'
+        return $ op e
+
+instance Arbitrary Expr where 
+  arbitrary = sized arbExpr
+
+
+{-Also, define a generator for expressions:
+
+arbExpr :: Int -> Gen Expr
+Do not forget to take care of the size argument in the generator.
+Make Expr an instance of the class Arbitrary and QuickCheck the result!
+
+instance Arbitrary Expr where 
+  arbitrary = sized arbExpr
+quickCheck will call arbExpr with sizes in the range [0..99],
+so make sure arbExpr produces reasonably sized expressions for testing
+with this range of sizes.-}
+
 
 
 
@@ -206,17 +238,9 @@ differentiate :: Expr -> Expr
 differentiate (Num n) = Num 0
 differentiate (Var) = Num 1
 differentiate (Bin Add n m) = simplify (Bin Add (differentiate n) (differentiate m))
-differentiate (Bin Mul n m) = Bin Add (Bin Mul (differentiate n) m) (Bin Mul n (differentiate m))
-differentiate (Trig Sin n) = Bin Mul (Trig Cos n) (differentiate n)
-differentiate (Trig Cos n) = Bin Mul (Num (-1)) (Bin Mul (Trig Sin n) (differentiate n))
-
-
-
---(Bin Mul (differentiate n) m) n är  derivierad: 3' * m 
-
--- Om expr är: (3x*5)
--- 3'* 5 + 3x * 0
-
+differentiate (Bin Mul n m) = simplify (Bin Mul (differentiate n) m) 
+differentiate (Trig Sin n) = simplify (Bin Mul (Trig Cos n) (differentiate n))
+differentiate (Trig Cos n) = simplify (Bin Mul (Num (-1)) (Bin Mul (Trig Sin n) (differentiate n)))
 
 
 
