@@ -104,9 +104,9 @@ prop_readExpr input = fromJust (readExpr (showExpr input)) == input
 
 
 {-assoc :: Expr -> Expr
-assoc (Add (Add e1 e2) e3) = assoc (Add e1 (Add e2 e3))
-assoc (Add e1          e2) = Add (assoc e1) (assoc e2)
-assoc (Sub e1 e2)          = Sub (assoc e1) (assoc e2)
+assoc (Add (Add n m) e3) = assoc (Add n (Add m e3))
+assoc (Add n          m) = Add (assoc n) (assoc m)
+assoc (Sub n m)          = Sub (assoc n) (assoc m)
 assoc (Lit n)              = Lit n -}
 ------------------------------------------------------------------------
 --Parsea OCH kalkylera:
@@ -178,9 +178,9 @@ arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s)]
     rBin s = do
         let s' = (s `div` 2)
         op <- elements [Bin Add, Bin Mul]
-        e1 <- arbExpr s'
-        e2 <- arbExpr s'
-        return $ op e1 e2
+        n <- arbExpr s'
+        m <- arbExpr s'
+        return $ op n m
     rTrig s = do
         let s' = (s `div` 2)
         op <- elements [Trig Sin, Trig Cos]
@@ -209,7 +209,7 @@ with this range of sizes.-}
 
 
 --F--------------------------------------------------------------------
-
+{-
 simplify :: Expr -> Expr
 simplify (Num n) = Num n 
 simplify (Var) = Var 
@@ -227,10 +227,32 @@ simplify (Trig Sin n) = Trig Sin (simplify n)
 simplify (Trig Cos n) = Trig Cos (simplify n)
 
 simplifyBin :: BinOp -> Expr -> Expr -> Expr
-simplifyBin op n m = Num (eval (Bin op n m) 0)
+simplifyBin Add (Num n) (Num m) = Num (n+m)
+simplifyBin Mul (Num n) (Num m) = Num (n*m)
+simplifyBin op n m = Bin op n m
+--simplifyBin op n m = Num (eval (Bin op n m) 0)  - Sätter in 0 för x och evaluerar hela uttrycket.
 
 --quickCheck TODO
+-}
 
+simplify :: Expr -> Expr
+simplify (Bin Add n m) = simplifyAdd (simplify n) (simplify m)
+simplify (Bin Mul n m) = simplifyMul (simplify n) (simplify m)
+simplify (Trig Sin n) = Trig Sin (simplify n)
+simplify (Trig Cos n) = Trig Cos (simplify n)
+simplify expr = expr
+
+simplifyAdd :: Expr -> Expr -> Expr
+simplifyAdd (Num 0) n = n
+simplifyAdd n (Num 0) = n
+simplifyAdd n m = Bin Add n m
+
+simplifyMul :: Expr -> Expr -> Expr
+simplifyMul (Num 0) n = Num 0
+simplifyMul n (Num 0) = Num 0
+simplifyMul (Num 1) n = n
+simplifyMul n (Num 1) = n
+simplifyMul n m = Bin Mul n m
 
 --G--------------------------------------------------------------------
 
@@ -239,6 +261,8 @@ differentiate (Num n) = Num 0
 differentiate (Var) = Num 1
 differentiate (Bin Add n m) = simplify (Bin Add (differentiate n) (differentiate m))
 differentiate (Bin Mul n m) = simplify (Bin Add (Bin Mul (differentiate n) m) (Bin Mul n (differentiate m)))
+--differentiate (Bin Add n m) = simplifyBin Add (differentiate n) (differentiate m)
+--differentiate (Bin Mul n m) = simplifyBin Mul (Bin Mul (differentiate n) m) (Bin Mul n (differentiate m))
 differentiate (Trig Sin n) = simplify (Bin Mul (Trig Cos n) (differentiate n))
 differentiate (Trig Cos n) = simplify (Bin Mul (Num (-1)) (Bin Mul (Trig Sin n) (differentiate n)))
 
