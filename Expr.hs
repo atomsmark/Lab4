@@ -10,17 +10,17 @@ import Data.Maybe
 
 --A---------------------------------------------
 data BinOp = Add | Mul
-    deriving (Eq, Show)
+    deriving (Eq)
 
 data TrigOp = Sin | Cos
-    deriving (Eq, Show)
+    deriving (Eq)
 
 data Expr
     = Num Double
     | Var
     | Bin BinOp Expr Expr
     | Trig TrigOp Expr
-    deriving (Eq, Show)
+    deriving (Eq)
 
 
 
@@ -48,8 +48,8 @@ size (Trig op n) = 1 + (size n)
 --A-------------------------------------------------
 
 --B-------------------------------------------------
---instance Show Expr where
---    show = showExpr
+instance Show Expr where
+    show = showExpr
 
 showExpr :: Expr -> String
 showExpr (Num n)     = show n
@@ -102,12 +102,13 @@ factor = Num <$> readsP
 prop_readExpr :: Expr -> Bool
 prop_readExpr input = fromJust (readExpr (showExpr input)) == input
 
-
-{-assoc :: Expr -> Expr
+{-
+assoc :: Expr -> Expr
 assoc (Add (Add n m) e3) = assoc (Add n (Add m e3))
 assoc (Add n          m) = Add (assoc n) (assoc m)
 assoc (Sub n m)          = Sub (assoc n) (assoc m)
-assoc (Lit n)              = Lit n -}
+assoc (Lit n)            = Lit n
+-}
 ------------------------------------------------------------------------
 --Parsea OCH kalkylera:
 {-type ParserFun a = String -> Maybe (a,String)
@@ -204,7 +205,26 @@ so make sure arbExpr produces reasonably sized expressions for testing
 with this range of sizes.-}
 
 
+-- 69 + 18*44*67 + cos 38 + sin 77
 
+-- Fall 1
+--Bin Add (69 + 18*(44*67))                                                   (cos 38 + sin 77)
+--Bin Add (Bin Add (Num 69) (Bin Mul (Num 18) (Bin Mul (Num 44) (Num 67)))) (Bin Add (Trig Cos (Num 38)) (Trig Sin (Num 77)))
+
+-- Fall 2
+--Bin Add (69 + ((18*44)*67))                                                   (cos 38 + sin 77)
+--Bin Add (Bin Add (Num 69) (Bin Mul (Num 18) (Bin Mul  (Num 67)))) (Bin Add (Trig Cos (Num 38)) (Trig Sin (Num 77)))
+
+
+-- "4 * 5 * 7"
+
+--Fall 1
+--(4 * 5) * 7
+--Bin Mul (Num 4) (Bin Mul (Num 5) (Num 7))
+
+--Fall 2
+--4 *(5 * 7)
+--Bin Mul (Bin Mul (Num 4) (Num 5)) (Num 7)
 
 
 
@@ -240,7 +260,7 @@ simplify (Bin Add n m) = simplifyAdd (simplify n) (simplify m)
 simplify (Bin Mul n m) = simplifyMul (simplify n) (simplify m)
 simplify (Trig Sin n) = Trig Sin (simplify n)
 simplify (Trig Cos n) = Trig Cos (simplify n)
-simplify expr = expr
+simplify n = n
 
 simplifyAdd :: Expr -> Expr -> Expr
 simplifyAdd (Num 0) n = n
@@ -253,6 +273,15 @@ simplifyMul n (Num 0) = Num 0
 simplifyMul (Num 1) n = n
 simplifyMul n (Num 1) = n
 simplifyMul n m = Bin Mul n m
+
+prop_simplifyCorrect :: Expr -> Property
+prop_simplifyCorrect n = property $ simplify n === n
+
+prop_simplifySimplicity :: Expr -> Property
+prop_simplifySimplicity n = property $ isFullySimplified n ==> simplify n === simplify (simplify n)
+  where
+    isFullySimplified :: Expr -> Bool
+    isFullySimplified e = simplify e == e
 
 --G--------------------------------------------------------------------
 
