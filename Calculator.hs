@@ -48,9 +48,9 @@ readAndDraw input canvas =
      -- The following code draws the formula text in the canvas and a blue line.
      -- It should be replaced with code that draws the graph of the function.------------------------------------------------------
      
-     set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
-     UI.fillText formula (10,canHeight/2) canvas
-     path "blue" [(10,10),(canWidth-10,canHeight/2)] canvas
+     --set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
+     --UI.fillText formula (10,canHeight/2) canvas
+     --path "blue" [(10,10),(canWidth-10,canHeight/2)] canvas
 
      --let expr = fromJust (readExpr formula)
 
