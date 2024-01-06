@@ -95,7 +95,7 @@ points :: Expr -> Double -> (Int, Int) -> [Point]
       where
         height' = fromIntegral height
   -}
-points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixToCoord x))) | x <- [0..fromIntegral width]]
+points expr scale (width, height) = [(x, coordToPix (eval expr (pixToCoord x))) | x <- [0..fromIntegral width]]
   where
     pixToCoord :: Double -> Double
     pixToCoord x = (x - fromIntegral width / 2) * scale
