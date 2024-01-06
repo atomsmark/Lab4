@@ -22,12 +22,14 @@ setup window =
      fx      <- mkHTML "<i>f</i>(<i>x</i>)="  -- The text "f(x)="
      input   <- mkInput 20 "x"                -- The formula input
      draw    <- mkButton "Draw graph"         -- The draw button
+     zoomInput <- mkInput 5 "1.0"
        -- The markup "<i>...</i>" means that the text inside should be rendered
        -- in italics.
 
      -- Add the user interface elements to the page, creating a specific layout
      formula <- row [pure fx,pure input]
      getBody window #+ [column [pure canvas,pure formula,pure draw]]
+     row [pure zoomInput, string "Zoom"]
 
      -- Styling
      getBody window # set style [("backgroundColor","lightblue"),
@@ -35,11 +37,11 @@ setup window =
      pure input # set style [("fontSize","14pt")]
 
      -- Interaction (install event handlers)
-     on UI.click     draw  $ \ _ -> readAndDraw input canvas
-     on valueChange' input $ \ _ -> readAndDraw input canvas
+     on UI.click     draw  $ \ _ -> readAndDraw input canvas zoomInput
+     on valueChange' input $ \ _ -> readAndDraw input canvas zoomInput
 
 
-readAndDraw :: Element -> Canvas -> UI ()
+{-readAndDraw :: Element -> Canvas -> UI ()
 readAndDraw input canvas =
   do -- Get the current formula (a String) from the input element
      formula <- get value input
@@ -76,6 +78,7 @@ readAndDraw input canvas =
       Nothing -> do
         set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
         UI.fillText "Invalid expression" (10,canHeight/2) canvas
+-}
 
 
 
@@ -101,4 +104,41 @@ points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixTo
     pixToCoord x = (x - fromIntegral width / 2) * scale
   
     coordToPix :: Double -> Double
-    coordToPix y = fromIntegral height / 2 - y / scale
+    coordToPix y = fromIntegral height / 2 - y/ scale
+
+
+
+
+readAndDraw :: Element -> Canvas -> Element -> UI ()
+readAndDraw input canvas zoomInput = do
+  -- Get the current formula (a String) from the input element
+  formula <- get value input
+  -- Get the current zoom factor from the text entry
+  zoomFactor <- read <$> get value zoomInput
+  -- Clear the canvas
+  clearCanvas canvas
+
+  -- Attempt to read the expression
+  case readExpr formula of
+    Just expr -> do
+      -- The expression is valid, so draw the graph
+      set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
+      UI.fillText formula (10, canHeight / 2) canvas
+
+      let scale = 0.04 * zoomFactor
+      let pointsList = points expr scale (canWidth, canHeight)
+      path "green" pointsList canvas
+
+    Nothing -> do
+      -- The expression is not valid, handle it gracefully
+      set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
+      UI.fillText "Invalid expression" (10, canHeight / 2) canvas
+
+
+
+-------------J-----------------
+
+
+
+
+
