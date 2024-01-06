@@ -54,7 +54,7 @@ readAndDraw input canvas =
 
      --let expr = fromJust (readExpr formula)
 
-     let expr = case readExpr formula of
+     {-let expr = case readExpr formula of
                   Just n -> n
                   Nothing -> error "couldn't read expression"
 
@@ -62,12 +62,26 @@ readAndDraw input canvas =
      let scale = 0.04
      let pointsList = points expr scale (canWidth, canHeight)
 
-     path "blue" pointsList canvas
+     path "blue" pointsList canvas -}
+
+     case readExpr formula of
+      Just expr -> do
+        set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
+        UI.fillText formula (10,canHeight/2) canvas
+
+        let scale = 0.04
+        let pointsList = points expr scale (canWidth, canHeight)
+
+        path "green" pointsList canvas
+      Nothing -> do
+        set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
+        UI.fillText "Invalid expression" (10,canHeight/2) canvas
+
 
 
 
 points :: Expr -> Double -> (Int, Int) -> [Point]
-points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixToCoord x))) | x <- [0..width']]
+{-points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixToCoord x))) | x <- [0..width']]
   where
     width' = fromIntegral width
 
@@ -80,3 +94,11 @@ points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixTo
     coordToPix y = height' / 2 - y / scale
       where
         height' = fromIntegral height
+  -}
+points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixToCoord x))) | x <- [0..fromIntegral width]]
+  where
+    pixToCoord :: Double -> Double
+    pixToCoord x = (x - fromIntegral width / 2) * scale
+  
+    coordToPix :: Double -> Double
+    coordToPix y = fromIntegral height / 2 - y / scale
