@@ -1,3 +1,5 @@
+module Expr where
+
 import Test.QuickCheck
 import GHC.Natural (naturalFromInteger)
 import Prelude 
