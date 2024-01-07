@@ -23,12 +23,17 @@ setup window =
      input   <- mkInput 20 "x"                -- The formula input
      draw    <- mkButton "Draw graph"         -- The draw button
      zoomInput <- mkInput 5 "1.0"
+     zoomSlider <- mkSlider (1, 20) 10
+  
+
+    
+
        -- The markup "<i>...</i>" means that the text inside should be rendered
        -- in italics.
 
      -- Add the user interface elements to the page, creating a specific layout
      formula <- row [pure fx,pure input]
-     getBody window #+ [column [pure canvas,pure formula,pure draw]]
+     getBody window #+ [column [pure canvas,pure formula,pure draw, pure zoomInput, pure zoomSlider]]
      row [pure zoomInput, string "Zoom"]
 
      -- Styling
@@ -37,8 +42,11 @@ setup window =
      pure input # set style [("fontSize","14pt")]
 
      -- Interaction (install event handlers)
-     on UI.click     draw  $ \ _ -> readAndDraw input canvas zoomInput
-     on valueChange' input $ \ _ -> readAndDraw input canvas zoomInput
+     on UI.click     draw  $ \ _ -> readAndDraw input canvas zoomInput zoomSlider
+     on valueChange' input $ \ _ -> readAndDraw input canvas zoomInput zoomSlider
+     on valueChange' zoomSlider $ \_ -> readAndDraw input canvas zoomInput zoomSlider
+
+
 
 
 {-readAndDraw :: Element -> Canvas -> UI ()
@@ -109,14 +117,15 @@ points expr scale (width, height) = [(x, coordToPix (eval expr (pixToCoord x))) 
 
 
 
-readAndDraw :: Element -> Canvas -> Element -> UI ()
-readAndDraw input canvas zoomInput = do
+readAndDraw :: Element -> Canvas -> Element -> Element -> UI ()
+readAndDraw input canvas zoomInput zoomSlider = do
   -- Get the current formula (a String) from the input element
   formula <- get value input
-  -- Get the current zoom factor from the text entry
-  zoomFactor <- read <$> get value zoomInput
   -- Clear the canvas
   clearCanvas canvas
+
+
+
 
   -- Attempt to read the expression
   case readExpr formula of
@@ -124,8 +133,16 @@ readAndDraw input canvas zoomInput = do
       -- The expression is valid, so draw the graph
       set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
       UI.fillText formula (10, canHeight / 2) canvas
+    
+  
+      zoomFactorStr <- get value zoomInput
+      let zoomFactor = read zoomFactorStr :: Double 
 
-      let scale = 0.04 * zoomFactor
+      sliderValue <- get value zoomSlider
+      let sliderZoomFactor = read sliderValue :: Double 
+      let totalZoomFactor = zoomFactor * sliderZoomFactor
+
+      let scale = 0.04 * totalZoomFactor 
       let pointsList = points expr scale (canWidth, canHeight)
       path "green" pointsList canvas
 
