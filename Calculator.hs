@@ -81,7 +81,7 @@ differentiateAndDraw input canvas =
 
         path "red" pointsList canvas
 
-        element input # set value (showExpr diffExpr)
+        --set value (showExpr diffExpr) input
         
       Nothing -> do
         set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
