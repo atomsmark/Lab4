@@ -22,12 +22,14 @@ setup window =
      fx      <- mkHTML "<i>f</i>(<i>x</i>)="  -- The text "f(x)="
      input   <- mkInput 20 "x"                -- The formula input
      draw    <- mkButton "Draw graph"         -- The draw button
+     differentiateButton <- mkButton "Differentiate"
        -- The markup "<i>...</i>" means that the text inside should be rendered
        -- in italics.
 
      -- Add the user interface elements to the page, creating a specific layout
-     formula <- row [pure fx,pure input]
-     getBody window #+ [column [pure canvas,pure formula,pure draw]]
+     formula <- row [pure fx, pure input]
+     buttons <- row [pure draw, pure differentiateButton]
+     getBody window #+ [column [pure canvas, pure formula, pure buttons]]
 
      -- Styling
      getBody window # set style [("backgroundColor","lightblue"),
@@ -35,34 +37,19 @@ setup window =
      pure input # set style [("fontSize","14pt")]
 
      -- Interaction (install event handlers)
-     on UI.click     draw  $ \ _ -> readAndDraw input canvas
-     on valueChange' input $ \ _ -> readAndDraw input canvas
+     on UI.click     draw  $ \ _ -> readAndDraw input differentiateButton canvas
+     on UI.click differentiateButton $ \ _ -> differentiateAndDraw input canvas
+     on valueChange' input $ \ _ -> readAndDraw input differentiateButton canvas
 
 
-readAndDraw :: Element -> Canvas -> UI ()
-readAndDraw input canvas =
+readAndDraw :: Element -> Element -> Canvas -> UI ()
+readAndDraw input differentiateButton canvas =
   do -- Get the current formula (a String) from the input element
      formula <- get value input
      -- Clear the canvas
      clearCanvas canvas
      -- The following code draws the formula text in the canvas and a blue line.
      -- It should be replaced with code that draws the graph of the function.------------------------------------------------------
-     
-     --set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
-     --UI.fillText formula (10,canHeight/2) canvas
-     --path "blue" [(10,10),(canWidth-10,canHeight/2)] canvas
-
-     --let expr = fromJust (readExpr formula)
-
-     {-let expr = case readExpr formula of
-                  Just n -> n
-                  Nothing -> error "couldn't read expression"
-
-
-     let scale = 0.04
-     let pointsList = points expr scale (canWidth, canHeight)
-
-     path "blue" pointsList canvas -}
 
      case readExpr formula of
       Just expr -> do
@@ -77,24 +64,33 @@ readAndDraw input canvas =
         set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
         UI.fillText "Invalid expression" (10,canHeight/2) canvas
 
+differentiateAndDraw :: Element -> Canvas -> UI ()
+differentiateAndDraw input canvas =
+  do
+    formula <- get value input
+    clearCanvas canvas
+
+    case readExpr formula of
+      Just expr -> do
+        set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
+        UI.fillText formula (10, canHeight / 2) canvas
+
+        let scale = 0.04
+        let diffExpr = simplify (differentiate expr)
+        let pointsList = points diffExpr scale (canWidth, canHeight)
+
+        path "red" pointsList canvas
+
+        element input # set value (showExpr diffExpr)
+        
+      Nothing -> do
+        set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
+        UI.fillText "Invalid expression" (10, canHeight / 2) canvas
+
 
 
 
 points :: Expr -> Double -> (Int, Int) -> [Point]
-{-points expr scale (width, height) = [(pixToCoord x, coordToPix (eval expr (pixToCoord x))) | x <- [0..width']]
-  where
-    width' = fromIntegral width
-
-    pixToCoord :: Double -> Double
-    pixToCoord x = (x - width' / 2) * scale
-      where
-        width' = fromIntegral width
-  
-    coordToPix :: Double -> Double
-    coordToPix y = height' / 2 - y / scale
-      where
-        height' = fromIntegral height
-  -}
 points expr scale (width, height) = [(x, coordToPix (eval expr (pixToCoord x))) | x <- [0..fromIntegral width]]
   where
     pixToCoord :: Double -> Double
