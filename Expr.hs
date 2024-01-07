@@ -78,6 +78,10 @@ eval (Trig Sin e) x  = Prelude.sin (eval e x)
 eval (Trig Cos e) x  = Prelude.cos (eval e x)
 
 
+evalExpr :: String -> Double -> Double
+evalExpr input x = maybe 0 (\expr -> eval expr x) (readExpr input)
+
+
 --D-------------------------------------------------
 -- | Runs the parser on the given string 
 --  to return maybe a thing and a string
