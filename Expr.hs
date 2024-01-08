@@ -95,6 +95,7 @@ readExpr input =  case parse expr $ filter (/=' ') input of
                  Just (a, rest) -> Just a
                  _              -> Nothing
 
+
 expr, term, factor :: Parser Expr
 expr = foldl1 (Bin Add) <$> chain term (char '+')
 term = foldl1 (Bin Mul) <$> chain factor (char '*')
@@ -105,8 +106,8 @@ factor = Num <$> readsP
       <|> char 'c' *> char 'o' *> char 's' *> ((Trig Cos) <$> factor)
 
 
-prop_readExpr :: Expr -> Bool
-prop_readExpr input = fromJust (readExpr (showExpr input)) == input
+--prop_readExpr :: Expr -> Bool
+--prop_readExpr input = fromJust (readExpr (showExpr input)) == input
 
 {-
 assoc :: Expr -> Expr
@@ -174,7 +175,18 @@ chain item sep = do
 
 --E--------------------------------------------------------------------
 prop_ShowReadExpr :: Expr -> Bool
-prop_ShowReadExpr input = fromJust (readExpr (showExpr input)) == input
+prop_ShowReadExpr input = fromJust (readExpr (showExpr $ assoc input)) == assoc input
+  where
+    assoc :: Expr -> Expr
+    --assoc (Bin Add (Bin Add n m) e3) = assoc (Bin Add n (Bin Add m e3))
+    assoc (Bin Add n (Bin Add m e3)) = assoc (Bin Add (Bin Add n m) e3)
+    assoc (Bin Add n m)              = Bin Add (assoc n) (assoc m)
+    --assoc (Bin Mul (Bin Mul n m) e3) = assoc (Bin Mul n (Bin Mul m e3))
+    assoc (Bin Mul n (Bin Mul m e3)) = assoc (Bin Mul (Bin Mul n m) e3)
+    assoc (Bin Mul n m)              = Bin Mul (assoc n) (assoc m)
+    assoc (Num n)                    = Num n
+    assoc (Trig Sin n)               = Trig Sin n
+    assoc (Trig Cos n)               = Trig Cos n
 
 range = 99
 
