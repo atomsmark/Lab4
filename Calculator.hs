@@ -22,15 +22,21 @@ setup window =
      fx      <- mkHTML "<i>f</i>(<i>x</i>)="  -- The text "f(x)="
      input   <- mkInput 20 "x"                -- The formula input
      draw    <- mkButton "Draw graph"         -- The draw button
+     zoomInput <- mkInput 5 "1.0"
+     zoomSlider <- mkSlider (1,20) 10
      differentiateButton <- mkButton "Differentiate"
-     scaleInput <- mkInput 5 "Scale"
+
+     --scaleInput <- mkInput 5 "Scale"
        -- The markup "<i>...</i>" means that the text inside should be rendered
        -- in italics.
 
      -- Add the user interface elements to the page, creating a specific layout
      formula <- row [pure fx, pure input]
-     buttons <- row [pure draw, pure differentiateButton, pure scaleInput]
+     buttons <- row [pure draw, pure differentiateButton, pure zoomInput, pure zoomSlider] -- Testar med zoomslid + zoominput
      getBody window #+ [column [pure canvas, pure formula, pure buttons]]
+     -- test
+     row [pure zoomInput, string "Zoom"]
+
 
      -- Styling
      getBody window # set style [("backgroundColor","lightblue"),
@@ -38,17 +44,17 @@ setup window =
      pure input # set style [("fontSize","14pt")]
 
      -- Interaction (install event handlers)
-     on UI.click     draw  $ \ _ -> readAndDraw input differentiateButton scaleInput canvas
-     on UI.click differentiateButton $ \ _ -> differentiateAndDraw input canvas
-     on valueChange' input $ \ _ -> readAndDraw input differentiateButton scaleInput canvas
+     on UI.click     draw  $ \ _ -> readAndDraw input differentiateButton canvas zoomInput zoomSlider 
+     on UI.click differentiateButton $ \ _ -> differentiateAndDraw input canvas zoomInput zoomSlider
+     on valueChange' input $ \ _ -> readAndDraw input differentiateButton canvas zoomInput zoomSlider
+     on valueChange' zoomSlider $ \ _ -> readAndDraw input differentiateButton canvas zoomInput zoomSlider
 
 
-readAndDraw :: Element -> Element -> Element -> Canvas -> UI ()
-readAndDraw input differentiateButton scaleInput canvas =
+
+readAndDraw :: Element -> Element -> Canvas -> Element -> Element -> UI ()
+readAndDraw input differentiateButton canvas zoomInput zoomSlider =
   do -- Get the current formula (a String) from the input element
      formula <- get value input
-     scaleStr <- get value scaleInput
-     let scale = read scaleStr :: Double
      -- Clear the canvas
      clearCanvas canvas
      -- The following code draws the formula text in the canvas and a blue line.
@@ -59,16 +65,25 @@ readAndDraw input differentiateButton scaleInput canvas =
         set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
         UI.fillText formula (10,canHeight/2) canvas
 
-        --let scale = 0.04
-        let pointsList = points expr scale (canWidth, canHeight)
+        zoomFactorStr <- get value zoomInput
+        let zoomFactor = read zoomFactorStr :: Double
 
+
+        sliderValue <- get value zoomSlider
+        let sliderZoomFactor = read sliderValue :: Double
+        let totalZoomFactor = zoomFactor * sliderZoomFactor
+
+
+        let scale = 0.04 * totalZoomFactor
+        let pointsList = points expr scale (canWidth, canHeight)
         path "green" pointsList canvas
+
       Nothing -> do
         set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
         UI.fillText "Invalid expression" (10,canHeight/2) canvas
 
-differentiateAndDraw :: Element -> Canvas -> UI ()
-differentiateAndDraw input canvas =
+differentiateAndDraw :: Element -> Canvas -> Element -> Element -> UI ()
+differentiateAndDraw input canvas zoomInput zoomSlider =
   do
     formula <- get value input
     clearCanvas canvas
@@ -78,7 +93,15 @@ differentiateAndDraw input canvas =
         set UI.fillStyle (UI.solidColor (UI.RGB 0 0 0)) (pure canvas)
         UI.fillText formula (10, canHeight / 2) canvas
 
-        let scale = 0.04
+        zoomFactorStr <- get value zoomInput
+        let zoomFactor = read zoomFactorStr :: Double
+
+
+        sliderValue <- get value zoomSlider
+        let sliderZoomFactor = read sliderValue :: Double
+        let totalZoomFactor = zoomFactor * sliderZoomFactor
+
+        let scale = 0.04 * totalZoomFactor
         let diffExpr = simplify (differentiate expr)
         let pointsList = points diffExpr scale (canWidth, canHeight)
 
