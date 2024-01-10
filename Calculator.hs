@@ -104,10 +104,12 @@ differentiateAndDraw input canvas zoomInput zoomSlider =
         let scale = 0.04 * totalZoomFactor
         let diffExpr = simplify (differentiate expr)
         let pointsList = points diffExpr scale (canWidth, canHeight)
-
+        
+        set value (showExpr diffExpr) (pure input)
+        
         path "red" pointsList canvas
 
-        --set value (showExpr diffExpr) input
+       
         
       Nothing -> do
         set UI.fillStyle (UI.solidColor (UI.RGB 255 0 0)) (pure canvas)
