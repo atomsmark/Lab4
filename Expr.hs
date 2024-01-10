@@ -58,8 +58,10 @@ showExpr (Num n)     = show n
 showExpr (Var)       = "x"
 showExpr (Bin Add n m) = showExpr n ++ " + " ++ showExpr m
 showExpr (Bin Mul n m) = showFactor n ++ " * " ++ showFactor m
-showExpr (Trig Sin n)    = "sin " ++ showFactor n
-showExpr (Trig Cos n)    = "cos " ++ showFactor n
+{-\\\\-}
+showExpr (Trig Sin n)    = "sin " ++ showTrig n
+showExpr (Trig Cos n)    = "cos " ++ showTrig n
+{-////-}
 
 showFactor (Bin Add n m) = "(" ++ showExpr (Bin Add n m) ++ ")"
 showFactor n               = showExpr n
@@ -185,15 +187,24 @@ prop_ShowReadExpr input = fromJust (readExpr (showExpr $ assoc input)) == assoc 
     assoc (Bin Mul n (Bin Mul m e3)) = assoc (Bin Mul (Bin Mul n m) e3)
     assoc (Bin Mul n m)              = Bin Mul (assoc n) (assoc m)
     assoc (Num n)                    = Num n
-    assoc (Trig Sin n)               = Trig Sin n
-    assoc (Trig Cos n)               = Trig Cos n
+
+    {-\\\\\\\\-}
+    --assoc (Trig Sin n)               = Trig Sin n
+    --assoc (Trig Cos n)               = Trig Cos n
+    assoc (Trig Sin n)               = Trig Sin (assoc n)
+    assoc (Trig Cos n)               = Trig Cos (assoc n)
+    {-////////-}
 
 range = 99
 
 arbExpr :: Int -> Gen Expr
-arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s)]
+--arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s)]
+{-\\\\\-}
+arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s),(s,rVar)]
+{-/////-}
   where
     rNum = elements $ map Num [0..range]
+    rVar = elements [Var]
     rBin s = do
         let s' = (s `div` 2)
         op <- elements [Bin Add, Bin Mul]
