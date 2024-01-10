@@ -24,10 +24,6 @@ data Expr
     | Trig TrigOp Expr
     deriving (Eq)
 
-
-
-
-
 x :: Expr
 x = Var
 
@@ -187,6 +183,7 @@ prop_ShowReadExpr input = fromJust (readExpr (showExpr $ assoc input)) == assoc 
     assoc (Bin Mul n (Bin Mul m e3)) = assoc (Bin Mul (Bin Mul n m) e3)
     assoc (Bin Mul n m)              = Bin Mul (assoc n) (assoc m)
     assoc (Num n)                    = Num n
+    assoc (Var)                      = Var
 
     {-\\\\\\\\-}
     --assoc (Trig Sin n)               = Trig Sin n
@@ -258,27 +255,32 @@ with this range of sizes.-}
 
 
 --F--------------------------------------------------------------------
-{-
+{-}
 simplify :: Expr -> Expr
-simplify (Num n) = Num n 
-simplify (Var) = Var 
-simplify (Bin Add (Num 0) m) = simplify m 
+simplify (Num n) = Num n
+simplify (Var) = Var
+
+simplify (Bin Add (Num 0) m) = simplify m
 simplify (Bin Add m (Num 0)) = simplify m
-simplify (Bin Mul (Num 0) _) = Num 0 
-simplify (Bin Mul _ (Num 0)) = Num 0 
-simplify (Bin Mul m (Num 1)) = simplify m 
-simplify (Bin Mul (Num 1) m) = simplify m
 simplify (Bin Add n m) = simplifyBin Add (simplify n) (simplify m)
+
+simplify (Bin Mul (Num 0) _) = Num 0
+simplify (Bin Mul _ (Num 0)) = Num 0
+simplify (Bin Mul m (Num 1)) = simplify m
+simplify (Bin Mul (Num 1) m) = simplify m
 simplify (Bin Mul n m) = simplifyBin Mul (simplify n) (simplify m)
+
 simplify (Trig Sin (Num 0)) = Num 0 -- fråga ifall detta behövs?
 simplify (Trig Cos (Num 0)) = Num 1 -- fråga ifall detta behövs?
 simplify (Trig Sin n) = Trig Sin (simplify n)
 simplify (Trig Cos n) = Trig Cos (simplify n)
 
-simplifyBin :: BinOp -> Expr -> Expr -> Expr
+
+simplifyBin :: BinOp -> Expr -> Expr -> Expr 
 simplifyBin Add (Num n) (Num m) = Num (n+m)
 simplifyBin Mul (Num n) (Num m) = Num (n*m)
 simplifyBin op n m = Bin op n m
+
 --simplifyBin op n m = Num (eval (Bin op n m) 0)  - Sätter in 0 för x och evaluerar hela uttrycket.
 
 --quickCheck TODO
