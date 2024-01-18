@@ -1,15 +1,9 @@
 module Expr where
 
 import Test.QuickCheck
-import GHC.Natural (naturalFromInteger)
 import Prelude 
---import DynFlags (IntegerLibrary(IntegerSimple), DynFlags (mainFunIs))
-import Parsing ( chain, char, parse, readsP, (<|>), Parser )
---import RegAlloc.Graph.Stats (addSRM)
-import Test.QuickCheck.Text (number)
-import Data.Maybe ( fromJust )
-import Data.Aeson (Value(Bool))
-
+import Parsing
+import Data.Maybe
 
 --A---------------------------------------------
 data BinOp = Add | Mul
