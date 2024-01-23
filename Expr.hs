@@ -113,17 +113,17 @@ prop_ShowReadExpr input = fromJust (readExpr (showExpr $ assoc input)) == assoc 
 range = 99
 
 arbExpr :: Int -> Gen Expr
-arbExpr s = frequency [(1,rNum),(s,rBin s),(s,rTrig s),(s,rVar)]
+arbExpr s = frequency [(1,rNum),(1,rBin),(1,rTrig),(1,rVar)]
   where
     rNum = elements $ map Num [0..range]
     rVar = elements [Var]
-    rBin s = do
+    rBin = do
         let s' = (s `div` 2)
         op <- elements [Bin Add, Bin Mul]
         n <- arbExpr s'
         m <- arbExpr s'
         return $ op n m
-    rTrig s = do
+    rTrig = do
         let s' = (s `div` 2)
         op <- elements [Trig Sin, Trig Cos]
         e <- arbExpr s'
@@ -135,14 +135,17 @@ instance Arbitrary Expr where
 simplify :: Expr -> Expr
 simplify (Bin Add n m) = simplifyAdd (simplify n) (simplify m)
 simplify (Bin Mul n m) = simplifyMul (simplify n) (simplify m)
-simplify (Trig Sin n) = Trig Sin (simplify n)
-simplify (Trig Cos n) = Trig Cos (simplify n)
+simplify (Trig Sin n)  = simplifySin (simplify n)
+simplify (Trig Cos n)  = simplifyCos (simplify n)
 simplify n = n
 
 simplifyAdd :: Expr -> Expr -> Expr
 simplifyAdd (Num 0) n = n
 simplifyAdd n (Num 0) = n
 simplifyAdd n m = Bin Add n m
+simplifyAdd (Num n) (Num m) | n < 0     = Num (m + n)
+                            | otherwise = Num (n + m)
+
 
 simplifyMul :: Expr -> Expr -> Expr
 simplifyMul (Num 0) n = Num 0
@@ -150,18 +153,41 @@ simplifyMul n (Num 0) = Num 0
 simplifyMul (Num 1) n = n
 simplifyMul n (Num 1) = n
 simplifyMul n m = Bin Mul n m
+simplifyMul (Num n) (Num m) = Num (n * m) // recursivt
 
+simplifySin :: Expr -> Expr
+simplifySin n       = Trig Sin n
+simplifySin (Num n) = Num (Prelude.sin n)
+
+simplifyCos :: Expr -> Expr
+simplifyCos n       = Trig Cos n
+simplifyCos (Num n) = Num (Prelude.cos n)
 
 
 
 prop_simplifyCorrect :: Expr -> Double -> Bool
 prop_simplifyCorrect n m = eval (simplify n) m == eval n m
 
-prop_simplifySimplicity :: Expr -> Property
+{-prop_simplifySimplicity :: Expr -> Property
 prop_simplifySimplicity n = property $ isSimplified n ==> simplify n === simplify (simplify n)
   where
     isSimplified :: Expr -> Bool
     isSimplified m = simplify m == m
+    -}
+
+{-prop_simplifySimplicity :: Expr -> Bool
+prop_simplifySimplicity n = isSimplified n ==> simplify n == simplify (simplify n)
+  where
+    isSimplified :: Expr -> Bool
+    isSimplified m = simplify m == m
+    -}
+
+prop_simplifySimplicity :: Expr -> Bool
+prop_simplifySimplicity n = isSimplified n && simplify n == simplify (simplify n)
+  where
+    isSimplified :: Expr -> Bool
+    isSimplified m = simplify m == m
+
 
 --G--------------------------------------------------------------------
 
